@@ -77,19 +77,23 @@ function ini_set {
         || error 65 "ini-process error", "$@"
 }
 
-unit_version=$(ini_get $src/.vault-unit core version)
+unit_version=$(ini_get $src/vault-unit.template core version)
 
 function check_vault_unit_compatible {
     local fname=./.vault-unit
     if ! [ -f "$fname" ]; then
         error 333 "is_vault_unit_compatible: Not a file `pwd`/$fname"
     fi
-    local version=$(ini_get $fname core version) || error 513 "Can't get unit version from $fname?"
+
+    local version=$(ini_get $fname core version)
+    if [ $? -ne 0 ]; then error 513 "Can't get unit version from $fname?"; fi
     if [ $version -gt $unit_version ]; then
         echo "Unit version $version > expected $unit_version"
         return 1
     fi
-    local name=$(ini_get $fname core name) || error 513 "Can't get unit name from $fname, is it set?"
+
+    local name=$(ini_get $fname core name)
+    if [ $? -ne 0 ]; then error 513 "Can't get unit name from $fname, is it set?"; fi
     if [ "x$name" == "x" ]; then
         echo "Empty unit name in $fname"
     fi
