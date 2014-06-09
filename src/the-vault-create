@@ -27,7 +27,7 @@ function create_dir {
 create_dir \
     && git init \
     && cp $src/gitignore.template .gitignore \
-    && echo "3" >> .vault \
+    && cp $src/vault.template .vault \
     && $src/the-vault-init "$user" "$email" \
     && git add .gitignore .vault \
     && git commit -m "anchor" \
