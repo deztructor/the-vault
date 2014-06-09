@@ -1,0 +1,57 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+index=
+tree=
+entry=
+
+function rename_index {
+    error 88 "TODO rename_index"
+}
+
+function rename_tree {
+    error 87 "TODO rename_tree"
+}
+
+function not_rename {
+    if [ $index == ' ' ] && [ $tree == 'D' ]; then
+        trace "Remove $entry"
+        git rm $entry
+    else
+        trace "Add $entry"
+        git add $entry
+    fi
+}
+
+function process {
+    echo "FOR $1"
+    status=$1
+    index=${status:0:1}
+    tree=${status:1:1}
+    entry=${status:3}
+    trace "INDEX $index TREE $tree WITH $entry"
+    case $tree in
+        [RC])
+            rename_tree
+            ;;
+        *)
+            case $index in
+                [RC])
+                    rename_index
+                    ;;
+                *)
+                    not_rename
+            esac
+    esac
+}
+
+while [ $# -ne 0 ]; do
+    process "$1"
+    shift;
+done
+
+

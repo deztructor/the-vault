@@ -1,0 +1,47 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 2 "<tag> <info_message>"
+
+info=$2
+get_root_and_enter
+
+branch="vault-snapshot-$(date +%Y-%m-%dT%H-%M-%S.%N%Z)"
+
+git checkout -b $branch $master
+
+status_file=`mktemp`
+git status -s > $status_file
+trace "Status: $(cat $status_file)"
+need_commit=false
+units=
+for unit in $(grep path .gitmodules | sed 's/.*= //'); do
+    unit_status=$(grep ".. $unit/\\?$" $status_file)
+    if [ "x$unit_status" != "x" ] ; then
+        to=$(expr substr "$unit_status" 2 1)
+        case "$to" in
+            'M')
+                trace "Adding $unit"
+                git add $unit
+                ;;
+            'D')
+                trace "Removing $unit"
+                git rm $unit
+                ;;
+            *)
+                error 66 "No processing for $to in $unit_status"
+        esac
+        git add $unit
+        need_commit=true
+        units="$units$unit,"
+    fi
+done
+
+if $need_commit; then
+    git commit -m "$units"
+    git notes add -m "$info" HEAD
+fi

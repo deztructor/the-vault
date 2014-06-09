@@ -1,0 +1,17 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 1 "<unit_name>"
+
+name=$1
+get_root_and_enter
+
+git checkout $master \
+    && git submodule deinit --force $name \
+    && git rm --force $name \
+    && git commit -m "-submodule:$name"
+

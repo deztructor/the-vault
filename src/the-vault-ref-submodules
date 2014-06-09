@@ -1,0 +1,26 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 1 "ref|-a"
+
+ref=$1
+get_root_and_enter
+
+function submodules_for_ref {
+    tree=$(git show --quiet --pretty=format:%T $1)
+    git cat-file -p $tree | grep "^[0-9]* commit"
+}
+
+if [ $ref == "-a" ]; then
+    cache=`mktemp`
+    for branch in $(the-vault-snapshot-list); do
+        submodules_for_ref $branch >> $cache
+    done
+    sort $cache | uniq 
+else
+    submodules_for_ref $ref
+fi

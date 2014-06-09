@@ -1,0 +1,21 @@
+#!/bin/sh
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+unit=`pwd`
+get_root_and_enter
+user=$(git config --get user.name) || error 4 "No user name set"
+email=$(git config --get user.email) || error 4 "No email set"
+
+cd $unit \
+    && git config pack.windowmemory 64m \
+    && git config core.bigFileThreshold 64m \
+    && git config --bool core.sparsecheckout true \
+    && git config user.name $user \
+    && git config user.email $email \
+    && git config pack.packsizelimit 128m \
+    && git config core.packedgitwindowsize 64m \
+    && git config core.packedgitlimit 64m \
+    && git config gc.auto 0

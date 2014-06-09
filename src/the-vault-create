@@ -1,0 +1,36 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 3 "<new-vault-path> <user> <email>"
+
+path=$1
+user=$2
+email=$3
+
+src=`dirname $0`
+src=`cd $src;pwd`
+echo "Creating vault in the directory $path"
+echo "the-vault-source $src"
+
+function create_dir {
+    if mkdir $path && cd $path; then
+        path=`pwd`
+    else
+        error 1 "Can't enter $path"
+    fi
+}
+
+create_dir \
+    && git init \
+    && cp $src/gitignore.template .gitignore \
+    && echo "3" >> .vault \
+    && $src/the-vault-init "$user" "$email" \
+    && git add .gitignore .vault \
+    && git commit -m "anchor" \
+    && git tag anchor \
+    && git branch -m master $master \
+    && $src/the-vault-scripts-update $src $path

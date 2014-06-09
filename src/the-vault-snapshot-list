@@ -1,0 +1,10 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+get_root_and_enter
+
+git branch | sed 's/^[\* ]*//' | grep -v "^$master\$" | grep "^$master"

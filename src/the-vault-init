@@ -1,0 +1,15 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 2 "<user_name> <email>"
+
+name=$1
+get_root_and_enter
+
+git config user.name $1 \
+    && git config user.email $2 \
+    && git config status.showUntrackedFiles all

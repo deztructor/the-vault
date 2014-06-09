@@ -1,0 +1,105 @@
+#+TITLE: Vault backup storage
+* Design
+
+** Storage structure
+
+   Backup repository to record metadata and submodules for each unit
+   to record changes.
+
+*** Large files
+
+    There is a separate task how to store large files. While it is
+    possible to tune xdelta and pack retrieval strategy, copies of
+    huge files are still stored inside pack files so space is wasted
+    when files are checked out (twice as much space is used). So,
+    files with size bigger than some value should be stored in the
+    separate storage to avoid packing of those files. There are
+    different options how this files can be recorded:
+
+    - symlink: it allows to browse backup storage and open files
+      directly from it but it is impossible to store symlinks on
+      filesystems w/o symlink support (e.g. vfat) and to use
+      e.g. FAT-formatted SD card as a backup storage. On the other
+      hand unix permissions etc. are also not supported on those file
+      systems.
+
+    - file with the same name as original but prefixed by distinctive
+      prefix and containig object hash recorded inside (and maybe some
+      additional information). In this case it is possible to store
+      data on e.g. vfat but direct access is not possible.
+
+*** Using file systems incompliant with POSIX
+
+    VFAT is the most interesting case because many SD cards are
+    formatted with it. There are 2 issues:
+    
+    - file permission and ownership information is lost if files are
+      copied to the incompliant file system
+  
+    - symlinks are not supported
+
+    Basically it means if API allows executable backup units to just
+    copy files into backup storage, files metadata will be lost. It is
+    possible to find a compromise only if vault tools are used to copy
+    files, so they can record metadata separetely. But it decreases
+    flexibility. The second option is to provide fuse-based file
+    system working as a bridge exposing POSIX-compliant FS and
+    recording metadata transparently on the VFAT to the separate
+    service files. It can be also helpful to manage large files by
+    transparently splitting 'em.
+
+** Backup model
+
+   Possible implementation depends on backup model. 
+   
+*** Incremental backup
+
+    Commit changes at the same branch in each submodule.
+
+**** Single unit branch, single root branch
+
+    Record changes in each submodule in the root repository commit in
+    the master branch and tag it.
+
+    Pros:
+
+    - it is possible to optimize backup process
+
+      If files are left in the tree backup script can analyse is
+      anything changed update only changed files (e.g. if rsync is
+      used for it)
+
+    - it is clearly visible is unit data changed or not.
+    
+    Cons:
+
+    - If some backup (commit) is deleted, tree need to be rebased ->
+      commit ids will be changed -> need to update whole root branch
+      too.
+
+**** Single unit branch, multiply root branches
+
+     Create branch in the root repo with single commit for each
+     backup. Pros & Cons are the same as for the previous case but it
+     becomes simplier to update root branch(es) in the case when
+     backup is deleted: while each commit still should be updated
+     because submodules hashes are changed there are no dependent
+     changes between root repo commits.
+
+*** Full backup
+
+    Each backup is commited into separate branch.
+
+    Pros:
+
+    - backups are independent
+
+      If one backup (commit) is deleted there is no need to rebase
+
+    - objects are still shared and compressed in the same object
+      storage
+
+    Cons:
+
+    - it is more complicated to optimize backup in the incremental way
+      (while maybe still possible)

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+

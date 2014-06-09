@@ -1,0 +1,33 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 1 "<unit_name>"
+
+name=$1
+get_root_and_enter
+
+function git_add_init {
+    git_dir=../.git/modules/$name/.git
+    mkdir -p $git_dir
+    git init --separate-git-dir $git_dir
+}
+
+git checkout $master \
+    && mkdir $name \
+    && cd $name \
+    && git_add_init \
+    && the-vault-submodule-config \
+    && ini_set $src/vault-unit.template core name $name > ./.vault-unit \
+    && git add .vault-unit \
+    && check_vault_unit_compatible \
+    && git commit -m "anchor" \
+    && cd $root \
+    && git submodule add ./$name \
+    && git add .gitmodules \
+    && git commit -m "+submodule" \
+    && git notes add -m "+$name"
+
