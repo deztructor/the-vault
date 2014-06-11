@@ -2,8 +2,7 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-export PATH=$src:$PATH
-source $src/the-vault_misc
+source $src/the-vault_misc $src
 
 ensure_param_count_exit_usage $# 3 "<new-vault-path> <user> <email>"
 
@@ -14,7 +13,6 @@ email=$3
 src=`dirname $0`
 src=`cd $src;pwd`
 echo "Creating vault in the directory $path"
-echo "the-vault-source $src"
 
 function create_dir {
     if mkdir $path && cd $path; then

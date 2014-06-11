@@ -2,8 +2,7 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-export PATH=$src:$PATH
-source $src/the-vault_misc
+source $src/the-vault_misc $src
 
 ensure_param_count_exit_usage $# 1 "<unit_name>"
 
@@ -25,6 +24,7 @@ git checkout $master \
     && git add .vault-unit \
     && check_vault_unit_compatible \
     && git commit -m "anchor" \
+    && git tag "unit" \
     && cd $root \
     && git submodule add ./$name \
     && git add .gitmodules \

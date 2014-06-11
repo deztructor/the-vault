@@ -1,0 +1,25 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 1 "sha1"
+sha1=$1
+shift
+
+echo "Checkout $1 to $sha1"
+git checkout -f master
+if git status; then
+    echo "There is unsaved data, commit"
+    git status --porcelain -z | xargs -0 the-vault-submodule-status-process
+    git commit -a -m "the-vault: unsaved-state"
+fi
+last=$(git rev-parse HEAD)
+if [ $last != $sha1 ]; then
+    echo "Revert to $sha1"
+    git revert --no-edit $sha1..HEAD
+else
+    echo "Nothing to revert for `pwd`"
+fi

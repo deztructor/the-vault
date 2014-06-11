@@ -4,13 +4,10 @@ master=vault
 root_version=3
 
 function error {
+    rc=$1
     echo "`basename $0`: ${@:2}" 1>&2;
-    exit $1
+    exit $rc
 }
-
-if [ "x$src" == "x" ]; then
-    error 444 "src variable should be set"
-fi
 
 is_trace=false
 if [ "x$VAULT_TRACE" != "x" ]; then
@@ -23,9 +20,18 @@ function trace {
     fi
 }
 
+if [ $# -eq 1 ]; then
+    src=$1
+else
+    src=`dirname $0`
+    src=`cd $src;pwd`
+fi
+trace "SCRIPTS DIR: $src"
+export PATH=$src:$PATH
+
 function ensure_param_count_op_exit_usage {
     if ! [ $1 $2 $3 ]; then
-        name=`basename $0`
+        local name=`basename $0`
         echo "Expecting param count: $1 $2 $3" 1>&2;
         echo "Params was: ${@:5}" 1>&2;
         echo "Usage: $name $4" 1>&2;
@@ -47,6 +53,13 @@ function get_root {
 function get_root_and_enter {
     get_root
     cd $root || error 2 "Can't enter $root"
+}
+
+function get_unit_and_enter {
+    get_root
+    unit=$1
+    unit_dir=$root/$unit
+    cd $unit || error 2 "Can't enter $unit_dir"
 }
 
 function get_current_branch {
@@ -99,3 +112,5 @@ function check_vault_unit_compatible {
     fi
     return 0
 }
+
+vault_misc=1

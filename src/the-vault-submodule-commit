@@ -2,17 +2,14 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-export PATH=$src:$PATH
-source $src/the-vault_misc
+source $src/the-vault_misc $src
 
 ensure_param_count_exit_usage $# 2 "<unit_name> <commit_message>"
 
 name=$1
 msg=$2
-get_root
 
-unit=$root/$name
-cd $unit || error 2 "Can't enter $unit"
+get_unit_and_enter $name
 
 function add {
     if [ -d $1 ]; then
@@ -20,8 +17,7 @@ function add {
     fi
 }
 
-git checkout master || error 99 "Can't checkout master for $name"
-#git ls-files --deleted -z | xargs -0 git rm
+git checkout -f master || error 99 "Can't checkout master for $name"
 git status --porcelain -z | xargs -0 the-vault-submodule-status-process
 git commit -a -m "$msg"
 

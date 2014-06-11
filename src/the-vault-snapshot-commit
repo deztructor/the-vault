@@ -2,11 +2,11 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-export PATH=$src:$PATH
-source $src/the-vault_misc
+source $src/the-vault_misc $src
 
 ensure_param_count_exit_usage $# 2 "<tag> <info_message>"
 
+tag=$1
 info=$2
 get_root_and_enter
 
@@ -42,6 +42,8 @@ for unit in $(grep path .gitmodules | sed 's/.*= //'); do
 done
 
 if $need_commit; then
-    git commit -m "$units"
+    echo "$units" > .vault-unit-list
+    git add .vault-unit-list
+    git commit -m "$tag"
     git notes add -m "$info" HEAD
 fi

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_op_exit_usage $# -ge 1 "<snapshot> [unit1],..."
+snapshot=$1
+shift
+get_root_and_enter
+
+git checkout $snapshot || error 341 "Can't checkout $snapshot"
+git status
+if [ $# -eq 0 ]; then
+    # checkout all
+    trace "Checkout all"
+    git reset --hard \
+        && git submodule foreach "$src/the-vault-submodule-revert \$sha1"
+else
+    # checkout only specified modules
+    trace "Checkout $1"
+    units="$1"
+    git submodule foreach "$src/the-vault-submodule-revert-match \$name \$sha1 $units"
+fi

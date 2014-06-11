@@ -1,0 +1,15 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+export PATH=$src:$PATH
+source $src/the-vault_misc
+
+ensure_param_count_exit_usage $# 3 "name sha1 [unit1],[unit2],..."
+pat=$1
+sha1=$2
+names=$3
+
+if echo ",$names," | grep -q ",$pat,"; then
+    the-vault-submodule-revert $sha1
+fi
