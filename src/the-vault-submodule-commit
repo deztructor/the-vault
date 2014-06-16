@@ -17,8 +17,13 @@ function add {
     fi
 }
 
-git checkout -f master || error 99 "Can't checkout master for $name"
+get_current_branch
+if [ "$branch" != "master" ]; then
+    error 22 "Submodule commit should be run only when on master, got $branch"
+fi
+
 git status --porcelain -z | xargs -0 the-vault-submodule-status-process
-git commit -a -m "$msg"
+git commit -a -m "vault-commit" \
+    && git notes add -m "vault-commit-$msg" HEAD
 
 

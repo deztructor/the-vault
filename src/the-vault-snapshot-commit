@@ -44,6 +44,6 @@ done
 if $need_commit; then
     echo "$units" > .vault-unit-list
     git add .vault-unit-list
-    git commit -m "$tag"
-    git notes add -m "$info" HEAD
+    git commit -m "$tag" \
+        && git notes add -m "$info" HEAD
 fi

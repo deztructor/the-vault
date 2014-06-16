@@ -17,7 +17,7 @@ function rename_tree {
 }
 
 function not_rename {
-    if [ $index == ' ' ] && [ $tree == 'D' ]; then
+    if [ "$index" == ' ' ] && [ "$tree" == 'D' ]; then
         trace "Remove $entry"
         git rm $entry
     else
@@ -29,10 +29,10 @@ function not_rename {
 function process {
     echo "FOR $1"
     status=$1
-    index=${status:0:1}
-    tree=${status:1:1}
+    index="${status:0:1}"
+    tree="${status:1:1}"
     entry=${status:3}
-    trace "INDEX $index TREE $tree WITH $entry"
+    trace "INDEX '$index' TREE '$tree' WITH '$entry'"
     case $tree in
         [RC])
             rename_tree

@@ -2,15 +2,14 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-export PATH=$src:$PATH
-source $src/the-vault_misc
+source $src/the-vault_misc $src
 
 ensure_param_count_op_exit_usage $# -ge 1 "<snapshot> [unit1],..."
 snapshot=$1
 shift
 get_root_and_enter
 
-git checkout $snapshot || error 341 "Can't checkout $snapshot"
+git checkout $snapshot || error 34 "Can't checkout $snapshot"
 git status
 if [ $# -eq 0 ]; then
     # checkout all

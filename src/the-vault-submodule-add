@@ -4,9 +4,18 @@ src=`dirname $0`
 src=`cd $src;pwd`
 source $src/the-vault_misc $src
 
-ensure_param_count_exit_usage $# 1 "<unit_name>"
-
+ensure_param_count_op_exit_usage $# -ge 1 "<unit_name> [is_store_blobs_separately]"
 name=$1
+shift;
+
+ini_template=$src/vault-unit.template
+
+if [ $# -eq 0 ]; then
+    blob_separate=1
+else
+    blob_separate=$1
+fi
+
 get_root_and_enter
 
 function git_add_init {
@@ -20,14 +29,15 @@ git checkout $master \
     && cd $name \
     && git_add_init \
     && the-vault-submodule-config \
-    && ini_set $src/vault-unit.template core name $name > ./.vault-unit \
+    && ini_set $ini_template core name $name > ./.vault-unit \
+    && ini_set ./.vault-unit blob separate $blob_separate > ./.vault-unit \
     && git add .vault-unit \
     && check_vault_unit_compatible \
-    && git commit -m "anchor" \
-    && git tag "unit" \
+    && git commit -m "vault-config" \
+    && git tag "vault-unit" \
     && cd $root \
     && git submodule add ./$name \
     && git add .gitmodules \
-    && git commit -m "+submodule" \
-    && git notes add -m "+$name"
+    && git commit -m "vault-submodule-add" \
+    && git notes add -m "vault-submodule-add-$name"
 

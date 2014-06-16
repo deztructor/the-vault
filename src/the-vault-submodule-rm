@@ -12,5 +12,6 @@ get_root_and_enter
 git checkout $master \
     && git submodule deinit --force $name \
     && git rm --force $name \
-    && git commit -m "-submodule:$name"
+    && git commit -m "vault-submodule-rm" \
+    && git notes add -m "vault-submodule-rm-$name"
 

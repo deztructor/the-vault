@@ -5,7 +5,7 @@ root_version=3
 
 function error {
     rc=$1
-    echo "`basename $0`: ${@:2}" 1>&2;
+    echo "`basename $0`: Error: ${@:2}" 1>&2;
     exit $rc
 }
 
@@ -71,7 +71,7 @@ function ini_get {
     section=$2
     key=$3
     if ! [ -f "$fname" ]; then
-        error 333 "File path '$fname' is wrong"
+        error 33 "File path '$fname' is wrong"
     fi
     awk -f $src/ini-process.awk -v section="$section" -v key="$key" $fname \
         || error 65 "ini-process error", "$@"
@@ -84,7 +84,7 @@ function ini_set {
     value=$4
 
     if ! [ -f "$fname" ]; then
-        error 333 "File path '$fname' is wrong"
+        error 33 "File path '$fname' is wrong"
     fi
     awk -f $src/ini-process.awk -v section="$section" -v key="$key" -v op=set -v value="$value" $fname \
         || error 65 "ini-process error", "$@"
@@ -95,18 +95,18 @@ unit_version=$(ini_get $src/vault-unit.template core version)
 function check_vault_unit_compatible {
     local fname=./.vault-unit
     if ! [ -f "$fname" ]; then
-        error 333 "is_vault_unit_compatible: Not a file `pwd`/$fname"
+        error 33 "is_vault_unit_compatible: Not a file `pwd`/$fname"
     fi
 
     local version=$(ini_get $fname core version)
-    if [ $? -ne 0 ]; then error 513 "Can't get unit version from $fname?"; fi
+    if [ $? -ne 0 ]; then error 51 "Can't get unit version from $fname?"; fi
     if [ $version -gt $unit_version ]; then
         echo "Unit version $version > expected $unit_version"
         return 1
     fi
 
     local name=$(ini_get $fname core name)
-    if [ $? -ne 0 ]; then error 513 "Can't get unit name from $fname, is it set?"; fi
+    if [ $? -ne 0 ]; then error 51 "Can't get unit name from $fname, is it set?"; fi
     if [ "x$name" == "x" ]; then
         echo "Empty unit name in $fname"
     fi
