@@ -1,0 +1,26 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+source $src/vault-misc $src
+
+ensure_param_count_exit_usage $# 2 "unit rev"
+unit=$1
+ref=$2
+
+get_unit_and_enter
+
+if git status; then
+    echo "There is unsaved data, commit"
+    git status --porcelain -z | xargs -0 git vault-unit-status-process
+    git commit -a -m "vault-intermediate"
+fi
+last=$(git rev-parse HEAD)
+reverted=$(git rev-parse $ref)
+if [ $last != $reverted ]; then
+    echo "Revert to $reverted"
+    git revert --no-edit $reverted..HEAD \
+        && git notes add -m "vault-revert/$ref..$last" HEAD
+else
+    echo "Nothing to revert for `pwd`"
+fi

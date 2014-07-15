@@ -2,13 +2,17 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-source $src/the-vault_misc $src
+source $src/vault-misc $src
 
 ensure_param_count_exit_usage $# 2 "<user_name> <email>"
 
 name=$1
+vid=$(unique_tag)
 get_root_and_enter
+trace "Vault, vid=$vid"
 
 git config user.name $1 \
     && git config user.email $2 \
-    && git config status.showUntrackedFiles all
+    && git config status.showUntrackedFiles all \
+    && git config vault.id $vid \
+    && mkdir .git/vault

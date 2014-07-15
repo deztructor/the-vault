@@ -2,7 +2,7 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-source $src/the-vault_misc $src
+source $src/vault-misc $src
 
 ensure_param_count_exit_usage $# 3 "<new-vault-path> <user> <email>"
 
@@ -25,10 +25,12 @@ function create_dir {
 create_dir \
     && git init \
     && cp $src/gitignore.template .gitignore \
-    && cp $src/vault.template .vault \
-    && $src/the-vault-init "$user" "$email" \
+    && mkdir .vault \
+    && touch .vault/root \
+    && cp $src/config.root.template .vault/config \
+    && git vault-init "$user" "$email" \
     && git add .gitignore .vault \
     && git commit -m "anchor" \
     && git tag anchor \
-    && git branch -m master $master \
-    && $src/the-vault-scripts-update $src $path
+    && git branch -m master $master_branch \
+    && git vault-scripts-update $src $path

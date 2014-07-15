@@ -1,0 +1,34 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+source $src/vault-misc $src
+
+ensure_param_count_op_exit_usage $# -ge 1 "<snapshot> [unit1],..."
+snapshot=$1
+shift
+
+function unit_revert {
+    config_file=$1
+    name=$(basename -s .unit $config_file)
+    trace "unit $name, file $config_file"
+    git vault-unit-revert $name $snapshot
+}
+
+get_root_and_enter
+
+git checkout $snapshot || error 34 "Can't checkout $snapshot"
+git status
+if [ $# -eq 0 ]; then
+    # checkout all
+    trace "Checkout all"
+    unit_files=$(find .vault/units -type f -name '*.unit' -print)
+    for f in $unit_files; do
+        unit_revert $f
+    done
+else
+    # checkout only specified modules
+    trace "Checkout $1"
+    units="$1"
+    TODO "$src/the-vault-submodule-revert-match \$name \$sha1 $units"
+fi

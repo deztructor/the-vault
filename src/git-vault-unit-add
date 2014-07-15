@@ -1,0 +1,52 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+source $src/vault-misc $src
+
+ensure_param_count_op_exit_usage $# -ge 1 "<unit_name> [is_store_blobs_separately=1]"
+name=$1
+shift;
+
+ini_template=$src/config.unit.template
+
+if [ $# -eq 0 ]; then
+    blob_separate=1
+else
+    blob_separate=$1
+fi
+
+function git_add_init {
+    git_dir=../.git/vault/$name/.git
+    mkdir -p $git_dir
+    git init --separate-git-dir $git_dir
+}
+
+get_root_and_enter
+
+unit_track_dir=.vault/units
+unit_track_file=$unit_track_dir/$name.unit
+mkdir -p $unit_track_dir
+
+unit_config_file=.vault/config
+
+git checkout $master_branch \
+    && mkdir -p $name/.vault \
+    && cd $name \
+    && git_add_init \
+    && git vault-unit-configure \
+    && touch .vault/unit \
+    && cp $ini_template $unit_config_file \
+    && git config --file $unit_config_file core.name $name \
+    && git config --file $unit_config_file blob.separate $blob_separate \
+    && git add .vault \
+    && check_vault_unit_compatible \
+    && git commit -m "vault-config" \
+    && git tag "vault-unit" \
+    && cd $root \
+    && echo "$name/" >> .gitignore \
+    && git config --file $unit_track_file main.state "vault-unit" \
+    && git add .gitignore $unit_track_file  \
+    && git commit -m "vault-unit-add" \
+    && git notes add -m "vault-unit-add-$name"
+

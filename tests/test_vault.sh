@@ -10,7 +10,7 @@ cdir=`dirname $0`
 cdir=`cd $cdir;pwd`
 src=`cd $cdir/../src;pwd`
 
-source $src/the-vault_misc $src
+source $src/vault-misc $src
 if [ "x$vault_misc" == "x" ]; then
     echo "vault utils are not imported"
     exit 1
@@ -51,14 +51,14 @@ function add_file_commit {
     local fname=$1 data=$2 unit=$3
     local dst=$unit/$fname
     echo "Write $data to the `pwd`/$dst"
-    cat $dst
+    test -x $dst && cat $dst
     echo "$data" > $dst || error 84 "Can't write to $dst" 
     cat $dst
-    the-vault-submodule-commit $unit "$data" || error 85 "Can't commit $unit"
+    git vault-unit-commit $unit "$data" || error 85 "Can't commit $unit"
 }
 
 function check_snapshots {
-    cur=$(the-vault-snapshot-list | wc -l)
+    cur=$(git vault-snapshot-list | wc -l)
     if [ $cur -ne $1 ]; then
         error 111 "Wrong snapshot count: $cur, need $1"
     fi
@@ -67,7 +67,7 @@ function check_snapshots {
 snapshots_count=0
 function new_snapshot {
     echo "New snapshot for $module"
-    the-vault-snapshot-commit "$data" "$data in $module" || test_error $1
+    git vault-snapshot-commit "$data in $module" || test_error $1
     snapshots_count=$(expr $snapshots_count + 1)
     check_snapshots $snapshots_count
 }
@@ -77,28 +77,41 @@ function check_file {
     local data=$2
 }
 
-the-vault-create $vault user user@test || error 901 "Can't create"
+git vault-create $vault user user@test || error 901 "Can't create"
 cd $vault || error 902 "Can't enter $vault"
 
 module=Gallery
-the-vault-submodule-add $module || error 93
+git vault-unit-add $module || error 93
 
 new_fname
 add_file_commit $fname "$data" "$module"
+# try again, nothing should be added
+add_file_commit $fname "$data" "$module"
+
 new_snapshot $LINENO
-snapshot1=$(the-vault-snapshot-list | head -n 1)
+snapshot1=$(git vault-snapshot-list | head -n 1)
+echo $snapshot1
 
 new_fname
 add_file_commit $fname "$data" "$module"
 new_snapshot $LINENO
 
 module=People
-the-vault-submodule-add $module 0 || error 93
+git vault-unit-add $module || error 93
 
 new_fname
 add_file_commit $fname "$data" "$module"
 new_snapshot $LINENO
 
+new_fname
+add_file_commit $fname "$data" "$module"
+new_snapshot $LINENO
+
+# snapshot with 2 modules
+new_fname
+add_file_commit $fname "$data" "$module"
+
+module=Gallery
 new_fname
 add_file_commit $fname "$data" "$module"
 new_snapshot $LINENO
@@ -111,9 +124,9 @@ new_snapshot $LINENO
 add_file_commit file000 "$data" "$module"
 new_snapshot $LINENO
 
-snapshotN=$(the-vault-snapshot-list | tail -n 1)
+snapshotN=$(git vault-snapshot-list | tail -n 1)
 
-the-vault-snapshot-revert $snapshot1 || error 43 "Can't revert to $snapshot1"
+git vault-snapshot-revert $snapshot1 || error 43 "Can't revert to $snapshot1"
 
-the-vault-snapshot-revert $snapshotN || error 43 "Can't revert to $snapshot1"
+git vault-snapshot-revert $snapshotN || error 43 "Can't revert to $snapshot1"
 echo "DONE"

@@ -26,7 +26,8 @@
     - file with the same name as original but prefixed by distinctive
       prefix and containig object hash recorded inside (and maybe some
       additional information). In this case it is possible to store
-      data on e.g. vfat but direct access is not possible.
+      data on e.g. vfat. In this case direct access (in-place) is not
+      possible.
 
 *** Using file systems incompliant with POSIX
 
@@ -48,17 +49,25 @@
     service files. It can be also helpful to manage large files by
     transparently splitting 'em.
 
+**** Adapter file system storing metadata separately
+
+     To solve issues with incompliant file systems it is possible to
+     use adapter FS storing any metadata not supported by underlying
+     FS in special files there. There is one such FS available, based
+     on FUSE: [[http://sourceforge.net/projects/posixovl/][posixovl]]. This solution is very flexible and transparent
+     while it also allows to avoid compromises.
+
 ** Backup model
 
    Possible implementation depends on backup model. 
    
 *** Incremental backup
 
-    Commit changes at the same branch in each submodule.
+    Commit changes at the same branch in each unit.
 
 **** Single unit branch, single root branch
 
-    Record changes in each submodule in the root repository commit in
+    Record changes in each unit in the root repository commit in
     the master branch and tag it.
 
     Pros:
@@ -83,7 +92,7 @@
      backup. Pros & Cons are the same as for the previous case but it
      becomes simplier to update root branch(es) in the case when
      backup is deleted: while each commit still should be updated
-     because submodules hashes are changed there are no dependent
+     because units hashes are changed there are no dependent
      changes between root repo commits.
 
 *** Full backup
@@ -103,3 +112,62 @@
 
     - it is more complicated to optimize backup in the incremental way
       (while maybe still possible)
+
+** COMMENT Vault structure
+
+   Vault consists of the *root repository* and any amount of *unit
+   repositories*. Root repository manages metadata about available
+   units and snapshots. Unit repository manages data related to some
+   application/functionality etc. Repositories are managed by git. All
+   vault-specific data is stored in the =.vault= subdirectory of the
+   git tree.
+
+#+BEGIN_SRC dot :file out/vault-structore.png :cmdline -Kdot -Tpng
+  digraph Vault {
+      rankdir=LR;
+      Root;
+      RootGit [label=".git"];
+      RootVault [label=".vault"];
+      Unit0 [label="Unit_0"];
+      Unit0Git [label=".git"];
+      Unit0Vault [label=".vault"];
+      Root -> RootGit;
+      Root -> RootVault;
+      Root -> Unit0;
+      Unit0 -> Unit0Git;
+      Unit0 -> Unit0Vault;
+  }
+#+END_SRC
+
+#+RESULTS:
+[[file:out/vault-structore.png]]
+
+*** Units
+
+   Unit is stored as a separate git repository and references to it
+   is stored in the root repository. Unit data can be stored inside of
+   the unit git tree as also outside of it.
+
+   There are 2 types of units by the way how files are handled by git:
+
+   - with separate blobs storage
+
+   Separate storage allows to store blobs have size above some
+   empirical limit in the separate storage located inside git
+   reposotiry. Git manages only symlinks. This model is preferred for
+   the data stored outside of the git tree to avoid multiply data
+   copying. Also it increases the speed of git operations.
+
+   - managing blobs fully by git
+
+   This is suitable for units managing medium and small files as for
+   units storing files inside the git tree. In this case git
+   operations can be slower for large files. Also cloning pulls all
+   the data to the remote repository - sometimes it can be redundant.
+
+   Also units can provide hooks executed on different stages of
+   backup/restore process.
+
+*** Root repository
+
+   Root repository 

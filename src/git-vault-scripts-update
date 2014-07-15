@@ -1,0 +1,25 @@
+#!/bin/bash
+
+src=`dirname $0`
+src=`cd $src;pwd`
+source $src/vault-misc $src
+
+ensure_param_count_exit_usage $# 2 "<src> <dst>"
+
+get_root_and_enter
+
+src=$1
+dst=$2
+scripts=.vault/scripts
+
+if ! [ -d $dst/$scripts ]; then
+    mkdir -p $dst/$scripts
+    if ! [ -d $dst/$scripts ]; then
+        error 1 "Can't create $dst/$scripts"
+    fi
+fi
+
+cp $src/git-vault*[^~] $src/*.template $dst/$scripts \
+    && cd $dst \
+    && git add $scripts \
+    && git commit -m "vault-scripts"

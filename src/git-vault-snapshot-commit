@@ -1,0 +1,43 @@
+#!/bin/sh
+
+src=`dirname $0`
+src=`cd $src;pwd`
+source $src/vault-misc $src
+
+ensure_param_count_exit_usage $# 1 "<info_message>"
+
+info=$1
+
+get_root_and_enter
+
+ref="vault-shot/$(get_vid)/$(date_tag)"
+trace "Ref $ref"
+git checkout -b $ref $master_branch
+
+status_file=`mktemp`
+git status -s > $status_file
+trace "Status: $(cat $status_file)"
+need_commit=false
+units=
+
+function unit_commit {
+    config_file=$1
+    name=$(basename -s .unit $config_file)
+    trace "unit $name, file $config_file"
+    get_unit_and_enter $name
+    git tag "$ref"
+}
+
+trace "Tagging units"
+unit_files=$(find .vault/units -type f -name '*.unit' -print)
+for f in $unit_files; do
+    unit_commit $f
+done
+
+trace "Commiting snapshot branch"
+get_root_and_enter
+snap_file=.vault/snapshot
+echo "$ref" >> $snap_file
+git add $snap_file
+git commit -m "$ref"
+git notes add -m "$info"

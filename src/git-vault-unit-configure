@@ -2,13 +2,14 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-source $src/the-vault_misc $src
+source $src/vault-misc $src
 
 unit=`pwd`
 get_root_and_enter
 user=$(git config --get user.name) || error 4 "No user name set"
 email=$(git config --get user.email) || error 4 "No email set"
 
+# TODO all size units should be configured dynamically
 cd $unit \
     && git config pack.windowmemory 64m \
     && git config core.bigFileThreshold 64m \

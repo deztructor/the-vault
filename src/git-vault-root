@@ -2,7 +2,7 @@
 
 src=`dirname $0`
 src=`cd $src;pwd`
-source $src/the-vault_misc $src
+source $src/vault-misc $src
 
 root=$(git rev-parse --show-toplevel)
 rc=$?
@@ -15,13 +15,13 @@ if ! [ -d "$root" ]; then
     error 2 "Wrong location, not a git repo? `pwd`"
 fi
 
-if [ -f $root/.vault ]; then
+if [ -d $root/.vault ] && [ -f $root/.vault/root ]; then
     echo $root
 else
     if [ root == "`dirname /`" ]; then
         error 3 "Reached /, vault is not found"
     fi
     root=`dirname $root`
-    res=$(cd $root && the-vault-root) || exit 34
+    res=$(cd $root && git vault-root) || exit 34
     echo $res
 fi
