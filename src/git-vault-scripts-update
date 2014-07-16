@@ -19,7 +19,7 @@ if ! [ -d $dst/$scripts ]; then
     fi
 fi
 
-cp $src/git-vault*[^~] $src/*.template $dst/$scripts \
+cp $src/git-vault*[^~] $src/vault-* $src/*.template $dst/$scripts \
     && cd $dst \
     && git add $scripts \
     && git commit -m "vault-scripts"

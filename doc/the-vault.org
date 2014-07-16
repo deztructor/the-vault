@@ -113,7 +113,7 @@
     - it is more complicated to optimize backup in the incremental way
       (while maybe still possible)
 
-** COMMENT Vault structure
+** Vault structure
 
    Vault consists of the *root repository* and any amount of *unit
    repositories*. Root repository manages metadata about available
@@ -122,7 +122,7 @@
    vault-specific data is stored in the =.vault= subdirectory of the
    git tree.
 
-#+BEGIN_SRC dot :file out/vault-structore.png :cmdline -Kdot -Tpng
+#+BEGIN_SRC dot :file out/vault-structure.png :cmdline -Kdot -Tpng
   digraph Vault {
       rankdir=LR;
       Root;
@@ -140,34 +140,62 @@
 #+END_SRC
 
 #+RESULTS:
-[[file:out/vault-structore.png]]
+[[file:out/vault-structure.png]]
 
 *** Units
 
-   Unit is stored as a separate git repository and references to it
-   is stored in the root repository. Unit data can be stored inside of
-   the unit git tree as also outside of it.
+    Unit is stored as a separate git repository and reference to it is
+    stored in the root repository. Unit data can be stored inside of
+    the unit git tree as also outside of it.
 
-   There are 2 types of units by the way how files are handled by git:
+    There are 2 types of units by the way how files are handled by git:
 
-   - with separate blobs storage
+    - with separate blobs storage
+      
+    Separate storage allows to store blobs have size above some
+    empirical limit in the separate storage located inside git
+    reposotiry. Git manages only symlinks. This model is preferred for
+    the data stored outside of the git tree to avoid multiply data
+    copying. Also it increases the speed of git operations.
 
-   Separate storage allows to store blobs have size above some
-   empirical limit in the separate storage located inside git
-   reposotiry. Git manages only symlinks. This model is preferred for
-   the data stored outside of the git tree to avoid multiply data
-   copying. Also it increases the speed of git operations.
+    - managing blobs fully by git
 
-   - managing blobs fully by git
+    This is suitable for units managing medium and small files as for
+    units storing files inside the git tree. In this case git
+    operations can be slower for large files. Also cloning pulls all
+    the data to the remote repository - sometimes it can be redundant.
 
-   This is suitable for units managing medium and small files as for
-   units storing files inside the git tree. In this case git
-   operations can be slower for large files. Also cloning pulls all
-   the data to the remote repository - sometimes it can be redundant.
-
-   Also units can provide hooks executed on different stages of
-   backup/restore process.
+    Also units can provide hooks executed on different stages of
+    backup/restore process.
 
 *** Root repository
 
-   Root repository 
+    Root repository 
+
+*** Snapshots
+
+    Snapshot is the mark pointing to the state of data in some moment
+    of time. Snapshot in the root repository is created as a branch
+    forked from the =master= branch, it allows snapshots to be
+    independent on each other, so no rebase is needed if some snapshot
+    is deleted. Unit refers to the snapshot by means of the tag with
+    the name equal to the name of the snapshot. Snapshot name consists
+    of 3 parts separated by slash: prefix =vault-shot=, unique =vault
+    id= and =date/time= in ISO format modified to be valid git
+    reference (allowed symbols).
+
+** Actions
+
+*** TODO Commit
+    
+*** Revert
+
+    State is restored by means of full or partial snapshot
+    reverting. This process consists of 2 steps:
+
+    - checkout snapshot branch in the root repository
+
+    - revert commits in the range between snashot and HEAD
+
+    Data is reverted in each unit repository chosen for restoration.
+

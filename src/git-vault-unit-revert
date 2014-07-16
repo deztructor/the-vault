@@ -8,19 +8,38 @@ ensure_param_count_exit_usage $# 2 "unit rev"
 unit=$1
 ref=$2
 
-get_unit_and_enter
+get_unit_and_enter $unit
 
-if git status; then
-    echo "There is unsaved data, commit"
-    git status --porcelain -z | xargs -0 git vault-unit-status-process
+intermed_data=$(git status --porcelain -z | xargs -0 git vault-unit-status-process)
+if [ "x$intermed_data" != "x" ]; then
+    echo "There is unsaved data, commit TODO Should it be done? Or it should be optional..."
     git commit -a -m "vault-intermediate"
 fi
+
 last=$(git rev-parse HEAD)
 reverted=$(git rev-parse $ref)
+
+function on_revert_error {
+    warn "Reset state back on error"
+    git reset --hard
+    git clean -fd
+    error ${@:1}
+}
+
 if [ $last != $reverted ]; then
     echo "Revert to $reverted"
-    git revert --no-edit $reverted..HEAD \
-        && git notes add -m "vault-revert/$ref..$last" HEAD
+    msg=$(echo "$ref" | sed -e 's/^vault-shot/vault-revert/' -)
+    #tags=$(git show-ref --tags -d | grep "^$reverted" | sed -e 's:.* refs/tags/::' -e 's:\^{}::')
+    tags=$(git tag --points-at "$reverted")
+    echo "TAGS>>" # TMP
+    git show-ref --tags -d | grep "^$reverted" | sed -e 's:.* refs/tags/::' -e 's:\^{}::'
+    echo "<<TAGS" # TMP
+    git revert --no-edit --no-commit $reverted..HEAD || on_revert_error 44 "Can't revert $reverted..HEAD"
+    git commit -m "$msg" || on_revert_error 44 "Can't commit $reverted..HEAD"
+    for tag in $tags; do
+        trace "Moving tag $tag to the HEAD"
+        git tag -f $tag
+    done
 else
     echo "Nothing to revert for `pwd`"
 fi

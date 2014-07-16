@@ -7,4 +7,8 @@ source $src/vault-misc $src
 get_root_and_enter
 
 id=$(get_vid)
-git branch | sed 's/^[\* ]*//' | grep -v "^$master_branch\$" | grep "^vault-shot/$id"
+git branch \
+    | sed 's/^[\* ]*//' \
+    | grep -v "^$master_branch\$" \
+    | grep "^vault-shot/$id" \
+    | sort

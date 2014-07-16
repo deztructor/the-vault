@@ -47,13 +47,18 @@ function new_fname {
     count=$(expr $count + 1)
 }
 
-function add_file_commit {
+function add_file {
     local fname=$1 data=$2 unit=$3
     local dst=$unit/$fname
     echo "Write $data to the `pwd`/$dst"
     test -x $dst && cat $dst
     echo "$data" > $dst || error 84 "Can't write to $dst" 
     cat $dst
+}
+
+function add_file_commit {
+    add_file ${@:1}
+    local data=$2 unit=$3
     git vault-unit-commit $unit "$data" || error 85 "Can't commit $unit"
 }
 
@@ -77,6 +82,10 @@ function check_file {
     local data=$2
 }
 
+function last_snap {
+    echo $(git vault-snapshot-list | tail -n 1)
+}
+
 git vault-create $vault user user@test || error 901 "Can't create"
 cd $vault || error 902 "Can't enter $vault"
 
@@ -89,7 +98,7 @@ add_file_commit $fname "$data" "$module"
 add_file_commit $fname "$data" "$module"
 
 new_snapshot $LINENO
-snapshot1=$(git vault-snapshot-list | head -n 1)
+snapshot1=$(last_snap)
 echo $snapshot1
 
 new_fname
@@ -106,6 +115,7 @@ new_snapshot $LINENO
 new_fname
 add_file_commit $fname "$data" "$module"
 new_snapshot $LINENO
+snap_no_gallery=$(last_snap)
 
 # snapshot with 2 modules
 new_fname
@@ -124,9 +134,16 @@ new_snapshot $LINENO
 add_file_commit file000 "$data" "$module"
 new_snapshot $LINENO
 
-snapshotN=$(git vault-snapshot-list | tail -n 1)
+if [ "$snapshot1" != "$(git vault-snapshot-list | head -n 1)" ]; then
+    error 23 "1st snapshot != 1st in the list"
+fi
+snapshotN=$(last_snap)
 
 git vault-snapshot-revert $snapshot1 || error 43 "Can't revert to $snapshot1"
 
-git vault-snapshot-revert $snapshotN || error 43 "Can't revert to $snapshot1"
+add_file  $fname "$data" "$module"
+git vault-snapshot-revert $snapshotN || error 43 "Can't revert to $snapshotN"
+
+git vault-snapshot-revert $snap_no_gallery || error 43 "Can't revert to $snapshotN1"
+git vault-snapshot-revert $snap_no_gallery || error 43 "Can't revert to $snapshotN1 (2)"
 echo "DONE"
